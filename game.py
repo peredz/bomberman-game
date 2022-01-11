@@ -2,10 +2,13 @@ import pygame as pg
 
 
 class Board:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.board = [[0] * width for _ in range(height)]
+    def __init__(self, file_name):
+        a = open(file=file_name).readlines()
+        self.lvl = [[int(j) for j in i[0:len(i) - 1]] for i in a]
+        print(self.lvl)
+        self.width = len(a[0])
+        self.height = len(a)
+        self.board = [[0] * self.width for _ in range(self.height)]
         self.left = 10
         self.top = 10
         self.cell_size = 30
@@ -20,6 +23,41 @@ class Board:
         self.left = left
         self.top = top
         self.cell_size = cell_size
+        for i in range(self.height - 1):
+            for j in range(self.width - 1):
+                print(i)
+                print(j)
+                print(len(self.lvl))
+                print(len(self.lvl[0]))
+
+                if self.lvl[i][j] == 0:
+                    self.cell_cfg.append([(53, 136, 0),
+                                          (((j * self.cell_size) + self.left),
+                                           ((i * self.cell_size) + self.top)),
+                                          0, -1])
+                elif self.lvl[i][j] == 1:
+                    self.cell_cfg.append([(174, 175, 175),
+                                          (((j * self.cell_size) + self.left),
+                                           ((i * self.cell_size) + self.top)),
+                                          0, -1])
+                elif self.lvl[i][j] == 2:
+                    self.cell_cfg.append([(102, 87, 69),
+                                          (((j * self.cell_size) + self.left),
+                                           ((i * self.cell_size) + self.top)),
+                                          0, -1])
+                else:
+                    self.cell_cfg.append([(176, 56, 56),
+                                          (((j * self.cell_size) + self.left),
+                                           ((i * self.cell_size) + self.top)),
+                                          0, -1])
+
+
+    def sset_view(self, file_name):
+        a = open(file=file_name).readlines()
+        a = [[int(j) for j in i[0:len(i) - 1]] for i in a]
+        self.cell_cfg = []
+        self.left = 1
+        self.top = 1
         for i in range(self.height):
             for j in range(self.width):
                 if (0 < j < self.width) and (0 < i < self.height) and ((i % 2) * (j % 2) > 0):
@@ -37,7 +75,6 @@ class Board:
         for i in self.cell_cfg:
             pg.draw.rect(screen, i[0], (i[1][0], i[1][1], self.cell_size,
                                         self.cell_size), i[2])
-
         # for i in self.OLIST:
         #     pg.draw.circle(i[0], i[1], i[2], i[3], i[4])
         # for i in self.XLIST:
@@ -88,13 +125,13 @@ if __name__ == '__main__':
     running = True
     fps = 200
     board_size = 21, 11
-    board = Board(board_size[0], board_size[1])
+    board = Board('levels/level_1.txt')
     board_view = 40, 40, 40
     board.set_view(board_view[0], board_view[1], board_view[2])
     size = width, height = board_size[0] * board_view[2] + board_view[2] * 2,\
                            board_size[1] * board_view[2] + board_view[2] * 2,
     screen = pg.display.set_mode(size)
-    screen.fill((174, 175, 175))
+    screen.fill((0, 0, 0))
     clock = pg.time.Clock()
     pg.display.flip()
     while running:
@@ -103,7 +140,7 @@ if __name__ == '__main__':
                 running = False
             if event.type == pg.MOUSEBUTTONDOWN:
                 board.get_click(event.pos)
-        screen.fill((174, 175, 175))
+        screen.fill((0, 0, 0))
         board.render(screen)
         pg.display.flip()
         clock.tick(fps)
