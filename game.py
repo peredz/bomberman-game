@@ -1,5 +1,31 @@
 import pygame as pg
 
+all_sprites = pg.sprite.Group()
+
+
+class AnimatedSprite(pg.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        # self.cur_frame - [0 - 11] skins
+        # self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
 
 class Board:
     def __init__(self, file_name):
@@ -50,7 +76,6 @@ class Board:
                                           (((j * self.cell_size) + self.left),
                                            ((i * self.cell_size) + self.top)),
                                           0, -1])
-
 
     def sset_view(self, file_name):
         a = open(file=file_name).readlines()
@@ -125,6 +150,8 @@ if __name__ == '__main__':
     running = True
     fps = 200
     board_size = 21, 11
+    bomber_man = AnimatedSprite(pg.image.load("adobe3.png"), 3, 4, 100, 100)
+    all_sprites.add(bomber_man)
     board = Board('levels/level_1.txt')
     board_view = 40, 40, 40
     board.set_view(board_view[0], board_view[1], board_view[2])
@@ -139,9 +166,38 @@ if __name__ == '__main__':
             if event.type == pg.QUIT:
                 running = False
             if event.type == pg.MOUSEBUTTONDOWN:
-                board.get_click(event.pos)
+                # bomber_man.cur_frame
+                bomber_man.update()
+                # board.get_click(event.pos)
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_w:
+                    frame = bomber_man.cur_frame
+                    if 0 <= frame < 3:
+                        bomber_man.cur_frame = (frame + 1) % 3
+                    else:
+                        bomber_man.cur_frame = 0
+                if event.key == pg.K_d:
+                    frame = bomber_man.cur_frame
+                    if 2 < frame < 6:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                    else:
+                        bomber_man.cur_frame = 3
+                if event.key == pg.K_s:
+                    frame = bomber_man.cur_frame
+                    if 5 < frame < 9:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 6
+                    else:
+                        bomber_man.cur_frame = 6
+                if event.key == pg.K_a:
+                    frame = bomber_man.cur_frame
+                    if 8 < frame:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                    else:
+                        bomber_man.cur_frame = 9
+                bomber_man.update()
         screen.fill((0, 0, 0))
         board.render(screen)
+        all_sprites.draw(screen)
         pg.display.flip()
         clock.tick(fps)
 pg.quit()
