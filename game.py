@@ -6,10 +6,16 @@ all_sprites = pg.sprite.Group()
 class AnimatedSprite(pg.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
+
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
+        self.frame_bgn = 0
+        self.frame_ed = 3
+
+        self.mv_x = 0
+        self.mv_y = 0
         self.rect = self.rect.move(x, y)
 
     def cut_sheet(self, sheet, columns, rows):
@@ -25,7 +31,16 @@ class AnimatedSprite(pg.sprite.Sprite):
         # self.cur_frame - [0 - 11] skins
         # self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        if self.mv_x or self.mv_y:
+            self.rect = self.rect.move(self.mv_x, self.mv_y)
 
+    def movement(self, x, y):
+        self.mv_x = x
+        self.mv_y = y
+
+    def frame_update(self, bgn, ed):
+        self.frame_bgn = bgn
+        self.frame_ed = ed
 
 class Board:
     def __init__(self, file_name):
@@ -148,28 +163,84 @@ class Board:
 if __name__ == '__main__':
     pg.init()
     running = True
-    fps = 200
-    board_size = 21, 11
+    fps = 40
+    clock = pg.time.Clock()
+
     bomber_man = AnimatedSprite(pg.image.load("adobe3.png"), 3, 4, 100, 100)
     all_sprites.add(bomber_man)
+    new_vect = [0, 0]
+
+    board_size = 21, 11
     board = Board('levels/level_1.txt')
     board_view = 40, 40, 40
     board.set_view(board_view[0], board_view[1], board_view[2])
-    size = width, height = board_size[0] * board_view[2] + board_view[2] * 2,\
-                           board_size[1] * board_view[2] + board_view[2] * 2,
+    size = width, height = \
+        board_size[0] * board_view[2] + board_view[2] * 2,\
+        board_size[1] * board_view[2] + board_view[2] * 2
+
     screen = pg.display.set_mode(size)
     screen.fill((0, 0, 0))
-    clock = pg.time.Clock()
     pg.display.flip()
+
     while running:
+        if bomber_man.cur_frame < 2:
+            bomber_man.cur_frame += 1
+        else:
+            bomber_man.cur_frame = 0
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
             if event.type == pg.MOUSEBUTTONDOWN:
+                pass
                 # bomber_man.cur_frame
-                bomber_man.update()
                 # board.get_click(event.pos)
             if event.type == pg.KEYDOWN:
+                keys = pg.key.get_pressed()
+                if keys[pg.K_w] and keys[pg.K_a]:
+                    new_vect = [-1, -1]
+                elif keys[pg.K_w] and keys[pg.K_d]:
+                    new_vect = [1, -1]
+                elif keys[pg.K_w] and keys[pg.K_s]:
+                    new_vect = [0, 0]
+                elif keys[pg.K_a] and keys[pg.K_d]:
+                    new_vect = [0, 0]
+                elif keys[pg.K_a] and keys[pg.K_s]:
+                    new_vect = [-1, 1]
+                elif keys[pg.K_s] and keys[pg.K_d]:
+                    new_vect = [1, 1]
+                elif keys[pg.K_w]:
+                    new_vect = [0, -2]
+                elif keys[pg.K_a]:
+                    new_vect = [-2, 0]
+                elif keys[pg.K_s]:
+                    new_vect = [0, 2]
+                elif keys[pg.K_d]:
+                    new_vect = [2, 0]
+            if event.type == pg.KEYUP:
+                keys = pg.key.get_pressed()
+                if keys[pg.K_w] and keys[pg.K_a]:
+                    new_vect = [-1, -1]
+                elif keys[pg.K_w] and keys[pg.K_d]:
+                    new_vect = [1, -1]
+                elif keys[pg.K_w] and keys[pg.K_s]:
+                    new_vect = [0, 0]
+                elif keys[pg.K_a] and keys[pg.K_d]:
+                    new_vect = [0, 0]
+                elif keys[pg.K_a] and keys[pg.K_s]:
+                    new_vect = [-1, 1]
+                elif keys[pg.K_s] and keys[pg.K_d]:
+                    new_vect = [1, 1]
+                elif keys[pg.K_w]:
+                    new_vect = [0, -2]
+                elif keys[pg.K_a]:
+                    new_vect = [-2, 0]
+                elif keys[pg.K_s]:
+                    new_vect = [0, 2]
+                elif keys[pg.K_d]:
+                    new_vect = [2, 0]
+                else:
+                    new_vect = [0, 0]
+
                 if event.key == pg.K_w:
                     frame = bomber_man.cur_frame
                     if 0 <= frame < 3:
@@ -194,7 +265,8 @@ if __name__ == '__main__':
                         bomber_man.cur_frame = ((frame + 1) % 3) + 9
                     else:
                         bomber_man.cur_frame = 9
-                bomber_man.update()
+        bomber_man.movement(new_vect[0], new_vect[1])
+        bomber_man.update()
         screen.fill((0, 0, 0))
         board.render(screen)
         all_sprites.draw(screen)
