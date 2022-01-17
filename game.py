@@ -19,8 +19,9 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.rect = self.rect.move(x, y)
 
     def cut_sheet(self, sheet, columns, rows):
-        self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
@@ -28,85 +29,259 @@ class AnimatedSprite(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        # self.cur_frame - [0 - 11] skins
-        # self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        if self.mv_x or self.mv_y:
-            self.rect = self.rect.move(self.mv_x, self.mv_y)
+
+
+class Bomb(pg.sprite.Sprite):
+
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("bombs.png"), 9, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+
+        x, y = ((x - 300) // 64) * 64 + 330, ((y - 165) // 64) * 64 + 210
+        self.rect = self.rect.move(x, y)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        if self.cur_frame < 9 and (self.cur_frame == self.cur_frame // 1):
+            self.image = self.frames[int(self.cur_frame)]
+
+
+class BomberMan(pg.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4, )
+        self.cur_frame = 6
+        self.image = self.frames[self.cur_frame]
+        self.frame_bgn = 0
+        self.frame_ed = 3
+
+        self.mv_x = 0
+        self.mv_y = 0
+        self.old_mv_x = self.mv_x
+        self.old_mv_y = self.mv_y
+        self.rect = self.rect.move(x, y)
 
     def movement(self, x, y):
+        self.old_mv_x = self.mv_x
+        self.old_mv_y = self.mv_y
         self.mv_x = x
         self.mv_y = y
 
-    def frame_update(self, bgn, ed):
-        self.frame_bgn = bgn
-        self.frame_ed = ed
+    def update(self):
+        a = True
+        if self.mv_x or self.mv_y:
+            self.rect = self.rect.move(self.mv_x, self.mv_y)
+        for i in all_sprites:
+            if BomberMan is not type(i) and Bomb is not type(i):
+                if pg.sprite.collide_mask(self, i):
+                    a = False
+        if a:
+            self.image = self.frames[self.cur_frame]
+        else:
+            if self.mv_x and self.mv_y:
+                a = False
+                self.rect = self.rect.move(0, -self.mv_y)
+                for i in all_sprites:
+                    if BomberMan is not type(i) and Bomb is not type(i):
+                        if pg.sprite.collide_mask(self, i):
+                            a = True
+                if a:
+                    a = False
+                    self.rect = self.rect.move(-self.mv_x, self.mv_y)
+                    for i in all_sprites:
+                        if BomberMan is not type(i) and Bomb is not type(i):
+                            if pg.sprite.collide_mask(self, i):
+                                a = True
+                    if a:
+                        self.rect = self.rect.move(0, -self.mv_y)
+            elif self.mv_x or self.mv_y:
+                self.rect = self.rect.move(-self.mv_x, -self.mv_y)
+
+    def vect_maker(keys):
+        new_vect = [0, 0]
+        if keys[pg.K_w]:
+            new_vect[1] -= 2
+        if keys[pg.K_a]:
+            new_vect[0] -= 2
+        if keys[pg.K_s]:
+            new_vect[1] += 2
+        if keys[pg.K_d]:
+            new_vect[0] += 2
+        if new_vect[0] // 2 and new_vect[1] // 2:
+            new_vect = [i / 2 for i in new_vect]
+        return new_vect
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def FrameDirection(self):
+        if self.mv_x == 0 and self.mv_y == -2:
+            frame = bomber_man.cur_frame
+            if 0 <= frame < 3:
+                bomber_man.cur_frame = (frame + 1) % 3
+            else:
+                bomber_man.cur_frame = 0
+        elif self.mv_x == 2 and self.mv_y == 0:
+            frame = bomber_man.cur_frame
+            if 2 < frame < 6:
+                bomber_man.cur_frame = ((frame + 1) % 3) + 3
+            else:
+                bomber_man.cur_frame = 3
+        elif self.mv_x == 0 and self.mv_y == 2:
+            frame = bomber_man.cur_frame
+            if 5 < frame < 9:
+                bomber_man.cur_frame = ((frame + 1) % 3) + 6
+            else:
+                bomber_man.cur_frame = 6
+        elif self.mv_x == -2 and self.mv_y == 0:
+            frame = bomber_man.cur_frame
+            if 8 < frame:
+                bomber_man.cur_frame = ((frame + 1) % 3) + 9
+            else:
+                bomber_man.cur_frame = 9
+        elif self.mv_x > 0:
+            frame = bomber_man.cur_frame
+            if 2 < frame < 6:
+                bomber_man.cur_frame = ((frame + 1) % 3) + 3
+            else:
+                bomber_man.cur_frame = 3
+        elif self.mv_x < 0:
+            frame = bomber_man.cur_frame
+            if 8 < frame:
+                bomber_man.cur_frame = ((frame + 1) % 3) + 9
+            else:
+                bomber_man.cur_frame = 9
+
+        self.image = self.frames[self.cur_frame]
+        self.mask = pg.mask.from_surface(self.image)
+
+
+class BrickBreakable(pg.sprite.Sprite):
+
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("block_sprite.png"), 8, 1)
+        self.frames = self.frames[1:7]
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+
+        self.mv_x = 0
+        self.mv_y = 0
+        self.rect = self.rect.move(x, y)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        pass
+
+
+class BrickUnbreakable(pg.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("block_sprite.png"), 8, 1)
+        self.frames = self.frames[0]
+        self.cur_frame = 0
+        self.image = self.frames
+
+        self.mv_x = 0
+        self.mv_y = 0
+        self.rect = self.rect.move(x, y)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        pass
+
 
 class Board:
     def __init__(self, file_name):
+
         a = open(file=file_name).readlines()
-        self.lvl = [[int(j) for j in i[0:len(i) - 1]] for i in a]
-        print(self.lvl)
+        self.lvl = [[j for j in i] for i in a]
+        print(*self.lvl, sep='\n')
+        print(*[''.join(i) for i in self.lvl], sep='\n')
+
         self.width = len(a[0])
         self.height = len(a)
         self.board = [[0] * self.width for _ in range(self.height)]
         self.left = 10
         self.top = 10
         self.cell_size = 30
+
         self.cell_cfg = []
-        self.XLIST = []
-        self.OLIST = []
-        self.set_view(self.left, self.top, self.cell_size)
-        self.OX = 1
+        # self.set_view(self.left, self.top, self.cell_size)
 
     def set_view(self, left, top, cell_size):
         self.cell_cfg = []
         self.left = left
         self.top = top
         self.cell_size = cell_size
-        for i in range(self.height - 1):
-            for j in range(self.width - 1):
-                print(i)
-                print(j)
-                print(len(self.lvl))
-                print(len(self.lvl[0]))
-
-                if self.lvl[i][j] == 0:
-                    self.cell_cfg.append([(53, 136, 0),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-                elif self.lvl[i][j] == 1:
-                    self.cell_cfg.append([(174, 175, 175),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-                elif self.lvl[i][j] == 2:
-                    self.cell_cfg.append([(102, 87, 69),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-                else:
-                    self.cell_cfg.append([(176, 56, 56),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-
-    def sset_view(self, file_name):
-        a = open(file=file_name).readlines()
-        a = [[int(j) for j in i[0:len(i) - 1]] for i in a]
-        self.cell_cfg = []
-        self.left = 1
-        self.top = 1
         for i in range(self.height):
             for j in range(self.width):
-                if (0 < j < self.width) and (0 < i < self.height) and ((i % 2) * (j % 2) > 0):
-                    self.cell_cfg.append([(174, 175, 175),
+                if self.lvl[i][j] == '.':
+                    self.cell_cfg.append([(57, 124, 0),
                                           (((j * self.cell_size) + self.left),
                                            ((i * self.cell_size) + self.top)),
                                           0, -1])
+                elif self.lvl[i][j] == '*':
+                    block_breakable = BrickBreakable((j * self.cell_size) + self.left,
+                                                     (i * self.cell_size) + self.top)
+                    all_sprites.add(block_breakable)
+                elif self.lvl[i][j] == '#':
+                    block_breakable = BrickUnbreakable((j * self.cell_size) + self.left,
+                                                     (i * self.cell_size) + self.top)
+                    all_sprites.add(block_breakable)
                 else:
-                    self.cell_cfg.append([(53, 136, 0),
+                    self.cell_cfg.append([(7, 90, 0),
                                           (((j * self.cell_size) + self.left),
                                            ((i * self.cell_size) + self.top)),
                                           0, -1])
@@ -115,10 +290,6 @@ class Board:
         for i in self.cell_cfg:
             pg.draw.rect(screen, i[0], (i[1][0], i[1][1], self.cell_size,
                                         self.cell_size), i[2])
-        # for i in self.OLIST:
-        #     pg.draw.circle(i[0], i[1], i[2], i[3], i[4])
-        # for i in self.XLIST:
-        #     pg.draw.line(i[0], i[1], i[2], i[3], i[4])
 
     def get_cell(self, mouse_pos):
         x, y = mouse_pos
@@ -128,31 +299,8 @@ class Board:
                    (y - self.top) // self.cell_size
 
     def on_click(self, cell_coords):
-        if self.cell_cfg[cell_coords[1] * self.width + cell_coords[0]][3] \
-                == -1:
-            self.OX = (self.OX + 1) % 2
-            self.cell_cfg[cell_coords[1] * self.width + cell_coords[0]][3] =\
-                self.OX
-            cyrc_cds =\
-                self.cell_cfg[cell_coords[1] * self.width + cell_coords[0]][1]
-            if self.OX == 0:
-                self.XLIST.append((screen,
-                                   (0, 0, 255),
-                                   (cyrc_cds[0] + 2, cyrc_cds[1] + 2),
-                                   (cyrc_cds[0] + self.cell_size - 2,
-                                    cyrc_cds[1] + self.cell_size - 2), 2))
-                self.XLIST.append((screen,
-                                   (0, 0, 255),
-                                   (cyrc_cds[0] + self.cell_size - 2,
-                                    cyrc_cds[1] + 2),
-                                   (cyrc_cds[0] + 2,
-                                    cyrc_cds[1] + self.cell_size - 2), 2))
-            else:
-                self.OLIST.append((screen,
-                                   (255, 0, 0),
-                                   (cyrc_cds[0] + (self.cell_size // 2),
-                                    cyrc_cds[1] + (self.cell_size // 2)),
-                                   self.cell_size // 2 - 2, 2))
+        if self.cell_cfg[cell_coords[1] * self.width + cell_coords[0]][3] == -1:
+            pass
 
     def get_click(self, mouse_pos):
         mouse_cords = self.get_cell(mouse_pos)
@@ -164,112 +312,78 @@ if __name__ == '__main__':
     pg.init()
     running = True
     fps = 40
+    tm = 0
     clock = pg.time.Clock()
 
-    bomber_man = AnimatedSprite(pg.image.load("adobe3.png"), 3, 4, 100, 100)
+    bomber_man = BomberMan(390, 270)
     all_sprites.add(bomber_man)
     new_vect = [0, 0]
 
+    bombs = dict()
+    max_bombs = 1
+    cur_bombs = 0
+
     board_size = 21, 11
     board = Board('levels/level_1.txt')
-    board_view = 40, 40, 40
+    board_view = 320, 200, 64
     board.set_view(board_view[0], board_view[1], board_view[2])
     size = width, height = \
         board_size[0] * board_view[2] + board_view[2] * 2,\
         board_size[1] * board_view[2] + board_view[2] * 2
 
-    screen = pg.display.set_mode(size)
+    screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
     screen.fill((0, 0, 0))
     pg.display.flip()
 
     while running:
-        if bomber_man.cur_frame < 2:
-            bomber_man.cur_frame += 1
-        else:
-            bomber_man.cur_frame = 0
+        # bomber_man.cur_frame = (bomber_man.cur_frame + 1) % len(bomber_man.frames)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
             if event.type == pg.MOUSEBUTTONDOWN:
-                pass
+                x, y = pg.mouse.get_pos()
+                if 1880 < x < 1920 and 0 < y < 40:
+                    running = False
                 # bomber_man.cur_frame
                 # board.get_click(event.pos)
-            if event.type == pg.KEYDOWN:
-                keys = pg.key.get_pressed()
-                if keys[pg.K_w] and keys[pg.K_a]:
-                    new_vect = [-1, -1]
-                elif keys[pg.K_w] and keys[pg.K_d]:
-                    new_vect = [1, -1]
-                elif keys[pg.K_w] and keys[pg.K_s]:
-                    new_vect = [0, 0]
-                elif keys[pg.K_a] and keys[pg.K_d]:
-                    new_vect = [0, 0]
-                elif keys[pg.K_a] and keys[pg.K_s]:
-                    new_vect = [-1, 1]
-                elif keys[pg.K_s] and keys[pg.K_d]:
-                    new_vect = [1, 1]
-                elif keys[pg.K_w]:
-                    new_vect = [0, -2]
-                elif keys[pg.K_a]:
-                    new_vect = [-2, 0]
-                elif keys[pg.K_s]:
-                    new_vect = [0, 2]
-                elif keys[pg.K_d]:
-                    new_vect = [2, 0]
-            if event.type == pg.KEYUP:
-                keys = pg.key.get_pressed()
-                if keys[pg.K_w] and keys[pg.K_a]:
-                    new_vect = [-1, -1]
-                elif keys[pg.K_w] and keys[pg.K_d]:
-                    new_vect = [1, -1]
-                elif keys[pg.K_w] and keys[pg.K_s]:
-                    new_vect = [0, 0]
-                elif keys[pg.K_a] and keys[pg.K_d]:
-                    new_vect = [0, 0]
-                elif keys[pg.K_a] and keys[pg.K_s]:
-                    new_vect = [-1, 1]
-                elif keys[pg.K_s] and keys[pg.K_d]:
-                    new_vect = [1, 1]
-                elif keys[pg.K_w]:
-                    new_vect = [0, -2]
-                elif keys[pg.K_a]:
-                    new_vect = [-2, 0]
-                elif keys[pg.K_s]:
-                    new_vect = [0, 2]
-                elif keys[pg.K_d]:
-                    new_vect = [2, 0]
-                else:
-                    new_vect = [0, 0]
 
-                if event.key == pg.K_w:
-                    frame = bomber_man.cur_frame
-                    if 0 <= frame < 3:
-                        bomber_man.cur_frame = (frame + 1) % 3
-                    else:
-                        bomber_man.cur_frame = 0
-                if event.key == pg.K_d:
-                    frame = bomber_man.cur_frame
-                    if 2 < frame < 6:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
-                    else:
-                        bomber_man.cur_frame = 3
-                if event.key == pg.K_s:
-                    frame = bomber_man.cur_frame
-                    if 5 < frame < 9:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 6
-                    else:
-                        bomber_man.cur_frame = 6
-                if event.key == pg.K_a:
-                    frame = bomber_man.cur_frame
-                    if 8 < frame:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
-                    else:
-                        bomber_man.cur_frame = 9
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_z:
+                    if cur_bombs < max_bombs:
+                        bomb = Bomb(bomber_man.rect.x, bomber_man.rect.y)
+                        bombs[tm] = bomb
+                        print(bombs)
+                        cur_bombs += 1
+                new_vect = BomberMan.vect_maker(pg.key.get_pressed())
+
+            if event.type == pg.KEYUP:
+                new_vect = BomberMan.vect_maker(pg.key.get_pressed())
+
         bomber_man.movement(new_vect[0], new_vect[1])
         bomber_man.update()
+        old_tm = tm
+        tm += fps * clock.tick() / 5000
+        if (tm // 1) > (old_tm // 1):
+            if cur_bombs:
+                del_bms = []
+                for i in bombs.keys():
+                    if bombs[i].cur_frame < 9:
+                        bombs[i].cur_frame += 0.5
+                        print(bombs[i].cur_frame)
+                        bombs[i].update()
+                    else:
+                        bombs[i].kill()
+                        del_bms.append(i)
+                        cur_bombs -= 1
+                if del_bms:
+                    for i in del_bms:
+                        del bombs[i]
+            bomber_man.FrameDirection()
+
         screen.fill((0, 0, 0))
         board.render(screen)
+        pg.draw.rect(screen, (30, 30, 30), (1880, 0, 40, 40), 40)
         all_sprites.draw(screen)
         pg.display.flip()
-        clock.tick(fps)
+# print(*board.lvl, sep='\n')
 pg.quit()
