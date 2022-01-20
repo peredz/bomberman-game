@@ -3,35 +3,6 @@ import pygame as pg
 all_sprites = pg.sprite.Group()
 
 
-class AnimatedSprite(pg.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, x, y):
-        super().__init__(all_sprites)
-
-        self.frames = []
-        self.cut_sheet(sheet, columns, rows)
-        self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
-        self.frame_bgn = 0
-        self.frame_ed = 3
-
-        self.mv_x = 0
-        self.mv_y = 0
-        self.rect = self.rect.move(x, y)
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pg.Rect(0, 0,
-                            sheet.get_width() // columns,
-                            sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pg.Rect(
-                    frame_location, self.rect.size)))
-
-    def update(self):
-        self.image = self.frames[self.cur_frame]
-
-
 class Bomb(pg.sprite.Sprite):
 
     def __init__(self, x, y):
@@ -60,6 +31,39 @@ class Bomb(pg.sprite.Sprite):
     def update(self):
         if self.cur_frame < 9 and (self.cur_frame == self.cur_frame // 1):
             self.image = self.frames[int(self.cur_frame)]
+        elif self.cur_frame > 9:
+            self.kill()
+
+
+class Boom(pg.sprite.Sprite):
+
+    def __init__(self, x, y, nums):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("boom.png"), 4, 5)
+        self.frames = self.frames[nums[0]: nums[1]]
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+
+        x, y = ((x - 300) // 64) * 64 + 330, ((y - 165) // 64) * 64 + 210
+        self.rect = self.rect.move(x, y)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+        def update(self):
+            if self.cur_frame < 3 and (self.cur_frame == self.cur_frame // 1):
+                self.image = self.frames[int(self.cur_frame)]
 
 
 class BomberMan(pg.sprite.Sprite):
@@ -68,6 +72,8 @@ class BomberMan(pg.sprite.Sprite):
 
         self.frames = []
         self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4, )
+        self.image = self.frames[4]
+        self.mask = pg.mask.from_surface(self.image)
         self.cur_frame = 6
         self.image = self.frames[self.cur_frame]
         self.frame_bgn = 0
@@ -75,13 +81,9 @@ class BomberMan(pg.sprite.Sprite):
 
         self.mv_x = 0
         self.mv_y = 0
-        self.old_mv_x = self.mv_x
-        self.old_mv_y = self.mv_y
         self.rect = self.rect.move(x, y)
 
     def movement(self, x, y):
-        self.old_mv_x = self.mv_x
-        self.old_mv_y = self.mv_y
         self.mv_x = x
         self.mv_y = y
 
@@ -118,13 +120,13 @@ class BomberMan(pg.sprite.Sprite):
     def vect_maker(keys):
         new_vect = [0, 0]
         if keys[pg.K_w]:
-            new_vect[1] -= 2
+            new_vect[1] -= 4
         if keys[pg.K_a]:
-            new_vect[0] -= 2
+            new_vect[0] -= 4
         if keys[pg.K_s]:
-            new_vect[1] += 2
+            new_vect[1] += 4
         if keys[pg.K_d]:
-            new_vect[0] += 2
+            new_vect[0] += 4
         if new_vect[0] // 2 and new_vect[1] // 2:
             new_vect = [i / 2 for i in new_vect]
         return new_vect
@@ -140,25 +142,25 @@ class BomberMan(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def FrameDirection(self):
-        if self.mv_x == 0 and self.mv_y == -2:
+        if self.mv_x == 0 and self.mv_y == -4:
             frame = bomber_man.cur_frame
             if 0 <= frame < 3:
                 bomber_man.cur_frame = (frame + 1) % 3
             else:
                 bomber_man.cur_frame = 0
-        elif self.mv_x == 2 and self.mv_y == 0:
+        elif self.mv_x == 4 and self.mv_y == 0:
             frame = bomber_man.cur_frame
             if 2 < frame < 6:
                 bomber_man.cur_frame = ((frame + 1) % 3) + 3
             else:
                 bomber_man.cur_frame = 3
-        elif self.mv_x == 0 and self.mv_y == 2:
+        elif self.mv_x == 0 and self.mv_y == 4:
             frame = bomber_man.cur_frame
             if 5 < frame < 9:
                 bomber_man.cur_frame = ((frame + 1) % 3) + 6
             else:
                 bomber_man.cur_frame = 6
-        elif self.mv_x == -2 and self.mv_y == 0:
+        elif self.mv_x == -4 and self.mv_y == 0:
             frame = bomber_man.cur_frame
             if 8 < frame:
                 bomber_man.cur_frame = ((frame + 1) % 3) + 9
@@ -176,9 +178,6 @@ class BomberMan(pg.sprite.Sprite):
                 bomber_man.cur_frame = ((frame + 1) % 3) + 9
             else:
                 bomber_man.cur_frame = 9
-
-        self.image = self.frames[self.cur_frame]
-        self.mask = pg.mask.from_surface(self.image)
 
 
 class BrickBreakable(pg.sprite.Sprite):
@@ -247,8 +246,8 @@ class Board:
 
         a = open(file=file_name).readlines()
         self.lvl = [[j for j in i] for i in a]
-        print(*self.lvl, sep='\n')
-        print(*[''.join(i) for i in self.lvl], sep='\n')
+        # print(*self.lvl, sep='\n')
+        # print(*[''.join(i) for i in self.lvl], sep='\n')
 
         self.width = len(a[0])
         self.height = len(a)
@@ -319,9 +318,8 @@ if __name__ == '__main__':
     all_sprites.add(bomber_man)
     new_vect = [0, 0]
 
-    bombs = dict()
     max_bombs = 1
-    cur_bombs = 0
+    bombs = []
 
     board_size = 21, 11
     board = Board('levels/level_1.txt')
@@ -336,7 +334,7 @@ if __name__ == '__main__':
     pg.display.flip()
 
     while running:
-        # bomber_man.cur_frame = (bomber_man.cur_frame + 1) % len(bomber_man.frames)
+        bombs = [i for i in all_sprites if type(i) == Bomb]
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -348,41 +346,37 @@ if __name__ == '__main__':
                 # board.get_click(event.pos)
 
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_z:
-                    if cur_bombs < max_bombs:
+                if event.key == pg.K_x:
+                    if len(bombs) < max_bombs:
                         bomb = Bomb(bomber_man.rect.x, bomber_man.rect.y)
-                        bombs[tm] = bomb
-                        print(bombs)
-                        cur_bombs += 1
+                        all_sprites.add(bomb)
                 new_vect = BomberMan.vect_maker(pg.key.get_pressed())
 
             if event.type == pg.KEYUP:
                 new_vect = BomberMan.vect_maker(pg.key.get_pressed())
 
         bomber_man.movement(new_vect[0], new_vect[1])
-        bomber_man.update()
         old_tm = tm
         tm += fps * clock.tick() / 5000
         if (tm // 1) > (old_tm // 1):
-            if cur_bombs:
-                del_bms = []
-                for i in bombs.keys():
-                    if bombs[i].cur_frame < 9:
-                        bombs[i].cur_frame += 0.5
-                        print(bombs[i].cur_frame)
-                        bombs[i].update()
-                    else:
-                        bombs[i].kill()
-                        del_bms.append(i)
-                        cur_bombs -= 1
-                if del_bms:
-                    for i in del_bms:
-                        del bombs[i]
+            if bombs:
+                for i in bombs:
+                    i.cur_frame += 0.5
+                    # if board.lvl[x - 1][y] == '.':
+                    #     boom = Boom(((x - 1) * 64) + board_view[0], (y * 64) + board_view[1])
+                    # if board.lvl[x + 1][y] == '.':
+                    #     boom = Boom(((x + 1) * 64) + board_view[0], (y * 64) + board_view[1])
+                    # if board.lvl[x][y + 1] == '.':
+                    #     boom = Boom((x * 64) + board_view[0], ((y + 1) * 64) + board_view[1])
+                    # if board.lvl[x][y - 1] == '.':
+                    #     boom = Boom((x * 64) + board_view[0], ((y - 1) * 64) + board_view[1])
+                    # del bombs[i]
             bomber_man.FrameDirection()
 
         screen.fill((0, 0, 0))
         board.render(screen)
         pg.draw.rect(screen, (30, 30, 30), (1880, 0, 40, 40), 40)
+        all_sprites.update()
         all_sprites.draw(screen)
         pg.display.flip()
 # print(*board.lvl, sep='\n')
