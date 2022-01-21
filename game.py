@@ -32,6 +32,15 @@ class Bomb(pg.sprite.Sprite):
         if self.cur_frame < 9 and (self.cur_frame == self.cur_frame // 1):
             self.image = self.frames[int(self.cur_frame)]
         elif self.cur_frame > 9:
+            x, y = (self.rect.x - 330) + board_view[0],\
+                   (self.rect.y - 210) + board_view[1]
+            boom_top = Boom(x, y - 64, [0, 4])
+            boom_left = Boom(x - 64, y, [4, 8])
+            boon_down = Boom(x, y + 64, [8, 12])
+            boom_right = Boom(x + 64, y, [12, 16])
+            boom_cent = Boom(x, y, [16, 20])
+            for i in [boom_top, boon_down, boom_left, boom_right, boom_cent]:
+                all_sprites.add(i)
             self.kill()
 
 
@@ -41,12 +50,11 @@ class Boom(pg.sprite.Sprite):
         super().__init__(all_sprites)
 
         self.frames = []
-        self.cut_sheet(pg.image.load("boom.png"), 4, 5)
+        self.cut_sheet(pg.image.load("BOOOM.png"), 4, 5)
         self.frames = self.frames[nums[0]: nums[1]]
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
 
-        x, y = ((x - 300) // 64) * 64 + 330, ((y - 165) // 64) * 64 + 210
         self.rect = self.rect.move(x, y)
 
         self.mask = pg.mask.from_surface(self.image)
@@ -61,9 +69,23 @@ class Boom(pg.sprite.Sprite):
                 self.frames.append(sheet.subsurface(pg.Rect(
                     frame_location, self.rect.size)))
 
-        def update(self):
-            if self.cur_frame < 3 and (self.cur_frame == self.cur_frame // 1):
-                self.image = self.frames[int(self.cur_frame)]
+    def update(self):
+        for i in [j for j in all_sprites if
+                  type(j) == BrickUnbreakable or type(j) == BrickBreakable]:
+            if pg.sprite.collide_mask(self, i):
+                self.kill()
+        if self.cur_frame < 4 and (self.cur_frame == self.cur_frame // 1):
+            self.image = self.frames[int(self.cur_frame)]
+        elif self.cur_frame == 4:
+            self.image = self.frames[3]
+        elif self.cur_frame == 5:
+            self.image = self.frames[2]
+        elif self.cur_frame == 6:
+            self.image = self.frames[1]
+        elif self.cur_frame == 7:
+            self.image = self.frames[0]
+        elif self.cur_frame == 8:
+            self.kill()
 
 
 class BomberMan(pg.sprite.Sprite):
@@ -78,6 +100,8 @@ class BomberMan(pg.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         self.frame_bgn = 0
         self.frame_ed = 3
+
+        self.tim = 0
 
         self.mv_x = 0
         self.mv_y = 0
@@ -142,42 +166,43 @@ class BomberMan(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def FrameDirection(self):
-        if self.mv_x == 0 and self.mv_y == -4:
-            frame = bomber_man.cur_frame
-            if 0 <= frame < 3:
-                bomber_man.cur_frame = (frame + 1) % 3
-            else:
-                bomber_man.cur_frame = 0
-        elif self.mv_x == 4 and self.mv_y == 0:
-            frame = bomber_man.cur_frame
-            if 2 < frame < 6:
-                bomber_man.cur_frame = ((frame + 1) % 3) + 3
-            else:
-                bomber_man.cur_frame = 3
-        elif self.mv_x == 0 and self.mv_y == 4:
-            frame = bomber_man.cur_frame
-            if 5 < frame < 9:
-                bomber_man.cur_frame = ((frame + 1) % 3) + 6
-            else:
-                bomber_man.cur_frame = 6
-        elif self.mv_x == -4 and self.mv_y == 0:
-            frame = bomber_man.cur_frame
-            if 8 < frame:
-                bomber_man.cur_frame = ((frame + 1) % 3) + 9
-            else:
-                bomber_man.cur_frame = 9
-        elif self.mv_x > 0:
-            frame = bomber_man.cur_frame
-            if 2 < frame < 6:
-                bomber_man.cur_frame = ((frame + 1) % 3) + 3
-            else:
-                bomber_man.cur_frame = 3
-        elif self.mv_x < 0:
-            frame = bomber_man.cur_frame
-            if 8 < frame:
-                bomber_man.cur_frame = ((frame + 1) % 3) + 9
-            else:
-                bomber_man.cur_frame = 9
+        if self.tim // 1 == self.tim:
+            if self.mv_x == 0 and self.mv_y == -4:
+                frame = bomber_man.cur_frame
+                if 0 <= frame < 3:
+                    bomber_man.cur_frame = (frame + 1) % 3
+                else:
+                    bomber_man.cur_frame = 0
+            elif self.mv_x == 4 and self.mv_y == 0:
+                frame = bomber_man.cur_frame
+                if 2 < frame < 6:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                else:
+                    bomber_man.cur_frame = 3
+            elif self.mv_x == 0 and self.mv_y == 4:
+                frame = bomber_man.cur_frame
+                if 5 < frame < 9:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 6
+                else:
+                    bomber_man.cur_frame = 6
+            elif self.mv_x == -4 and self.mv_y == 0:
+                frame = bomber_man.cur_frame
+                if 8 < frame:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                else:
+                    bomber_man.cur_frame = 9
+            elif self.mv_x > 0:
+                frame = bomber_man.cur_frame
+                if 2 < frame < 6:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                else:
+                    bomber_man.cur_frame = 3
+            elif self.mv_x < 0:
+                frame = bomber_man.cur_frame
+                if 8 < frame:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                else:
+                    bomber_man.cur_frame = 9
 
 
 class BrickBreakable(pg.sprite.Sprite):
@@ -334,7 +359,8 @@ if __name__ == '__main__':
     pg.display.flip()
 
     while running:
-        bombs = [i for i in all_sprites if type(i) == Bomb]
+        bombs_booms = [i for i in all_sprites if type(i) == Bomb or type(i) == Boom]
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -342,12 +368,10 @@ if __name__ == '__main__':
                 x, y = pg.mouse.get_pos()
                 if 1880 < x < 1920 and 0 < y < 40:
                     running = False
-                # bomber_man.cur_frame
-                # board.get_click(event.pos)
 
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_x:
-                    if len(bombs) < max_bombs:
+                    if len([i for i in bombs_booms if type(i) == Bomb]) < max_bombs:
                         bomb = Bomb(bomber_man.rect.x, bomber_man.rect.y)
                         all_sprites.add(bomb)
                 new_vect = BomberMan.vect_maker(pg.key.get_pressed())
@@ -357,20 +381,15 @@ if __name__ == '__main__':
 
         bomber_man.movement(new_vect[0], new_vect[1])
         old_tm = tm
-        tm += fps * clock.tick() / 5000
+        tm += fps * clock.tick() / 2500
         if (tm // 1) > (old_tm // 1):
-            if bombs:
-                for i in bombs:
-                    i.cur_frame += 0.5
-                    # if board.lvl[x - 1][y] == '.':
-                    #     boom = Boom(((x - 1) * 64) + board_view[0], (y * 64) + board_view[1])
-                    # if board.lvl[x + 1][y] == '.':
-                    #     boom = Boom(((x + 1) * 64) + board_view[0], (y * 64) + board_view[1])
-                    # if board.lvl[x][y + 1] == '.':
-                    #     boom = Boom((x * 64) + board_view[0], ((y + 1) * 64) + board_view[1])
-                    # if board.lvl[x][y - 1] == '.':
-                    #     boom = Boom((x * 64) + board_view[0], ((y - 1) * 64) + board_view[1])
-                    # del bombs[i]
+            if bombs_booms:
+                for i in bombs_booms:
+                    if type(i) == Bomb:
+                        i.cur_frame += 0.25
+                    elif type(i) == Boom:
+                        i.cur_frame += 1
+            bomber_man.tim += 0.5
             bomber_man.FrameDirection()
 
         screen.fill((0, 0, 0))
