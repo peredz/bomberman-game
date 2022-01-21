@@ -92,6 +92,8 @@ class BomberMan(pg.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
 
+        self.running = True
+
         self.frames = []
         self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4, )
         self.image = self.frames[4]
@@ -108,40 +110,42 @@ class BomberMan(pg.sprite.Sprite):
         self.rect = self.rect.move(x, y)
 
     def movement(self, x, y):
-        self.mv_x = x
-        self.mv_y = y
+        if self.running:
+            self.mv_x = x
+            self.mv_y = y
 
     def update(self):
-        a = True
-        if self.mv_x or self.mv_y:
-            self.rect = self.rect.move(self.mv_x, self.mv_y)
-        for i in all_sprites:
-            if BomberMan is not type(i) and Bomb is not type(i):
-                if pg.sprite.collide_mask(self, i):
+        if self.running:
+            a = True
+            if self.mv_x or self.mv_y:
+                self.rect = self.rect.move(self.mv_x, self.mv_y)
+            for i in all_sprites:
+                if BomberMan is not type(i) and Bomb is not type(i):
+                    if pg.sprite.collide_mask(self, i):
+                        a = False
+            if a:
+                self.image = self.frames[self.cur_frame]
+            else:
+                if self.mv_x and self.mv_y:
                     a = False
-        if a:
-            self.image = self.frames[self.cur_frame]
-        else:
-            if self.mv_x and self.mv_y:
-                a = False
-                self.rect = self.rect.move(0, -self.mv_y)
-                for i in all_sprites:
-                    if BomberMan is not type(i) and Bomb is not type(i):
-                        if pg.sprite.collide_mask(self, i):
-                            a = True
-                if a:
-                    a = False
-                    self.rect = self.rect.move(-self.mv_x, self.mv_y)
+                    self.rect = self.rect.move(0, -self.mv_y)
                     for i in all_sprites:
                         if BomberMan is not type(i) and Bomb is not type(i):
                             if pg.sprite.collide_mask(self, i):
                                 a = True
                     if a:
-                        self.rect = self.rect.move(0, -self.mv_y)
-            elif self.mv_x or self.mv_y:
-                self.rect = self.rect.move(-self.mv_x, -self.mv_y)
+                        a = False
+                        self.rect = self.rect.move(-self.mv_x, self.mv_y)
+                        for i in all_sprites:
+                            if BomberMan is not type(i) and Bomb is not type(i):
+                                if pg.sprite.collide_mask(self, i):
+                                    a = True
+                        if a:
+                            self.rect = self.rect.move(0, -self.mv_y)
+                elif self.mv_x or self.mv_y:
+                    self.rect = self.rect.move(-self.mv_x, -self.mv_y)
 
-    def vect_maker(keys):
+    def vect_maker(self, keys):
         new_vect = [0, 0]
         if keys[pg.K_w]:
             new_vect[1] -= 4
@@ -166,43 +170,56 @@ class BomberMan(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def FrameDirection(self):
-        if self.tim // 1 == self.tim:
-            if self.mv_x == 0 and self.mv_y == -4:
-                frame = bomber_man.cur_frame
-                if 0 <= frame < 3:
-                    bomber_man.cur_frame = (frame + 1) % 3
-                else:
-                    bomber_man.cur_frame = 0
-            elif self.mv_x == 4 and self.mv_y == 0:
-                frame = bomber_man.cur_frame
-                if 2 < frame < 6:
-                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
-                else:
-                    bomber_man.cur_frame = 3
-            elif self.mv_x == 0 and self.mv_y == 4:
-                frame = bomber_man.cur_frame
-                if 5 < frame < 9:
-                    bomber_man.cur_frame = ((frame + 1) % 3) + 6
-                else:
-                    bomber_man.cur_frame = 6
-            elif self.mv_x == -4 and self.mv_y == 0:
-                frame = bomber_man.cur_frame
-                if 8 < frame:
-                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
-                else:
-                    bomber_man.cur_frame = 9
-            elif self.mv_x > 0:
-                frame = bomber_man.cur_frame
-                if 2 < frame < 6:
-                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
-                else:
-                    bomber_man.cur_frame = 3
-            elif self.mv_x < 0:
-                frame = bomber_man.cur_frame
-                if 8 < frame:
-                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
-                else:
-                    bomber_man.cur_frame = 9
+        if self.running:
+            if self.tim // 1 == self.tim:
+                if self.mv_x == 0 and self.mv_y == -4:
+                    frame = bomber_man.cur_frame
+                    if 0 <= frame < 3:
+                        bomber_man.cur_frame = (frame + 1) % 3
+                    else:
+                        bomber_man.cur_frame = 0
+                elif self.mv_x == 4 and self.mv_y == 0:
+                    frame = bomber_man.cur_frame
+                    if 2 < frame < 6:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                    else:
+                        bomber_man.cur_frame = 3
+                elif self.mv_x == 0 and self.mv_y == 4:
+                    frame = bomber_man.cur_frame
+                    if 5 < frame < 9:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 6
+                    else:
+                        bomber_man.cur_frame = 6
+                elif self.mv_x == -4 and self.mv_y == 0:
+                    frame = bomber_man.cur_frame
+                    if 8 < frame:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                    else:
+                        bomber_man.cur_frame = 9
+                elif self.mv_x > 0:
+                    frame = bomber_man.cur_frame
+                    if 2 < frame < 6:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                    else:
+                        bomber_man.cur_frame = 3
+                elif self.mv_x < 0:
+                    frame = bomber_man.cur_frame
+                    if 8 < frame:
+                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                    else:
+                        bomber_man.cur_frame = 9
+        elif self.cur_frame > 3:
+            pass
+        else:
+            self.cur_frame += 1
+            self.image = self.frames[self.cur_frame]
+
+    def death(self):
+
+        self.running = False
+        self.frames = []
+        self.cut_sheet(pg.image.load("bomberman_death.png"), 1, 4, )
+        self.image = self.frames[0]
 
 
 class BrickBreakable(pg.sprite.Sprite):
@@ -374,10 +391,10 @@ if __name__ == '__main__':
                     if len([i for i in bombs_booms if type(i) == Bomb]) < max_bombs:
                         bomb = Bomb(bomber_man.rect.x, bomber_man.rect.y)
                         all_sprites.add(bomb)
-                new_vect = BomberMan.vect_maker(pg.key.get_pressed())
+                new_vect = BomberMan.vect_maker(bomber_man, pg.key.get_pressed())
 
             if event.type == pg.KEYUP:
-                new_vect = BomberMan.vect_maker(pg.key.get_pressed())
+                new_vect = BomberMan.vect_maker(bomber_man, pg.key.get_pressed())
 
         bomber_man.movement(new_vect[0], new_vect[1])
         old_tm = tm
