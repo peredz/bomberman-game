@@ -1,6 +1,83 @@
 import pygame as pg
-
+from random import shuffle, randint
 all_sprites = pg.sprite.Group()
+
+
+class Board:
+    def __init__(self, blcs, enms):
+
+        self.width = 49
+        self.height = 13
+        self.board = [['()' for i in range(self.width)] for j in range(self.height)]
+        self.lvl_maker(blcs, enms)
+
+        self.left = 0
+        self.top = 210
+        self.cell_size = 64
+
+    def lvl_maker(self, blocks_on_hndrd, enemy_on_hndrd):
+        for i in range(self.width):
+            self.board[0][i] = '[]'
+            self.board[self.height - 1][i] = '[]'
+        for i in range(self.height):
+            self.board[i][0] = '[]'
+            self.board[i][self.width - 1] = '[]'
+        for i in range(self.height // 2):
+            for j in range(self.width // 2):
+                self.board[i * 2][j * 2] = '[]'
+
+        clear_cels = []
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.board[i][j] == '()':
+                    clear_cels.append([i, j])
+        for i in range(4):
+            cels = clear_cels[100 * i + 1: 100 * (i + 1) + 1]
+            shuffle(cels)
+            enemy_on_hndrdd = randint(enemy_on_hndrd[0], enemy_on_hndrd[1])
+            blocks_on_hndrdd = randint(blocks_on_hndrd[0], blocks_on_hndrd[1])
+            enemys = cels[blocks_on_hndrdd: blocks_on_hndrdd + enemy_on_hndrdd]
+            bricks = cels[:blocks_on_hndrdd]
+            for j in bricks:
+                self.board[j[0]][j[1]] = '||'
+            for j in enemys:
+                self.board[j[0]][j[1]] = '+-'
+        for i in range(1, 4):
+            for j in range(1, 4):
+                self.board[i][j] = '()'
+        self.board[2][2] = '[]'
+
+    def set_view(self):
+        for i in range(self.height):
+            for j in range(self.width):
+                x, y = j * self.cell_size + self.left, i * self.cell_size + self.top
+                if self.board[i][j] == '[]':
+                    block = BrickUnbreakable(x, y)
+                    all_sprites.add(block)
+                elif self.board[i][j] == '||':
+                    block = BrickBreakable(x, y)
+                    all_sprites.add(block)
+                # elif self.lvl[i][j] == '+-':
+
+
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+        self.mvmnt = 0
+
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    def update(self, target):
+        # print(self.dx)
+        # print(target.rect.x)
+        # print(target.rect.w)
+        self.dx = -(target.rect.x + target.rect.w // 2 - 1920 // 2)
+        # print(self.dx)
+        # print(self.dx)
+        # print('\n')
 
 
 class Bomb(pg.sprite.Sprite):
@@ -13,7 +90,9 @@ class Bomb(pg.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
 
-        x, y = ((x - 300) // 64) * 64 + 330, ((y - 165) // 64) * 64 + 210
+        # x, y = ((x + 30) // 64) * 64 + (x - 910), ((y + 45) // 64) * 64 + 23
+        x, y = x // 64, y // 64
+        print(x, y)
         self.rect = self.rect.move(x, y)
 
         self.mask = pg.mask.from_surface(self.image)
@@ -71,9 +150,15 @@ class Boom(pg.sprite.Sprite):
 
     def update(self):
         for i in [j for j in all_sprites if
-                  type(j) == BrickUnbreakable or type(j) == BrickBreakable]:
+                  type(j) == BrickUnbreakable or type(j) == BrickBreakable or type(j) == BomberMan]:
             if pg.sprite.collide_mask(self, i):
-                self.kill()
+                if type(i) == BrickUnbreakable:
+                    self.kill()
+                elif type(i) == BrickBreakable:
+                    i.breaking = True
+                    self.kill()
+                elif type(i) == BomberMan:
+                    bomber_man.death()
         if self.cur_frame < 4 and (self.cur_frame == self.cur_frame // 1):
             self.image = self.frames[int(self.cur_frame)]
         elif self.cur_frame == 4:
@@ -95,13 +180,12 @@ class BomberMan(pg.sprite.Sprite):
         self.running = True
 
         self.frames = []
-        self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4, )
+        self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4)
+        self.cut_sheet(pg.image.load("bomberman_death.png"), 4, 1)
         self.image = self.frames[4]
         self.mask = pg.mask.from_surface(self.image)
         self.cur_frame = 6
         self.image = self.frames[self.cur_frame]
-        self.frame_bgn = 0
-        self.frame_ed = 3
 
         self.tim = 0
 
@@ -116,6 +200,9 @@ class BomberMan(pg.sprite.Sprite):
 
     def update(self):
         if self.running:
+            for i in [i for i in all_sprites if type(i) == Boom]:
+                if pg.sprite.collide_mask(self, i):
+                    self.running = False
             a = True
             if self.mv_x or self.mv_y:
                 self.rect = self.rect.move(self.mv_x, self.mv_y)
@@ -144,17 +231,20 @@ class BomberMan(pg.sprite.Sprite):
                             self.rect = self.rect.move(0, -self.mv_y)
                 elif self.mv_x or self.mv_y:
                     self.rect = self.rect.move(-self.mv_x, -self.mv_y)
+        else:
+            self.death()
 
     def vect_maker(self, keys):
+
         new_vect = [0, 0]
         if keys[pg.K_w]:
-            new_vect[1] -= 4
+            new_vect[1] -= 8
         if keys[pg.K_a]:
-            new_vect[0] -= 4
+            new_vect[0] -= 8
         if keys[pg.K_s]:
-            new_vect[1] += 4
+            new_vect[1] += 8
         if keys[pg.K_d]:
-            new_vect[0] += 4
+            new_vect[0] += 8
         if new_vect[0] // 2 and new_vect[1] // 2:
             new_vect = [i / 2 for i in new_vect]
         return new_vect
@@ -170,62 +260,69 @@ class BomberMan(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def FrameDirection(self):
-        if self.running:
-            if self.tim // 1 == self.tim:
-                if self.mv_x == 0 and self.mv_y == -4:
-                    frame = bomber_man.cur_frame
-                    if 0 <= frame < 3:
-                        bomber_man.cur_frame = (frame + 1) % 3
-                    else:
-                        bomber_man.cur_frame = 0
-                elif self.mv_x == 4 and self.mv_y == 0:
-                    frame = bomber_man.cur_frame
-                    if 2 < frame < 6:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
-                    else:
-                        bomber_man.cur_frame = 3
-                elif self.mv_x == 0 and self.mv_y == 4:
-                    frame = bomber_man.cur_frame
-                    if 5 < frame < 9:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 6
-                    else:
-                        bomber_man.cur_frame = 6
-                elif self.mv_x == -4 and self.mv_y == 0:
-                    frame = bomber_man.cur_frame
-                    if 8 < frame:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
-                    else:
-                        bomber_man.cur_frame = 9
-                elif self.mv_x > 0:
-                    frame = bomber_man.cur_frame
-                    if 2 < frame < 6:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 3
-                    else:
-                        bomber_man.cur_frame = 3
-                elif self.mv_x < 0:
-                    frame = bomber_man.cur_frame
-                    if 8 < frame:
-                        bomber_man.cur_frame = ((frame + 1) % 3) + 9
-                    else:
-                        bomber_man.cur_frame = 9
-        elif self.cur_frame > 3:
-            pass
-        else:
-            self.cur_frame += 1
-            self.image = self.frames[self.cur_frame]
+        if self.tim // 1 == self.tim:
+            if self.mv_x == 0 and self.mv_y == -8:
+                frame = bomber_man.cur_frame
+                if 0 <= frame < 3:
+                    bomber_man.cur_frame = (frame + 1) % 3
+                else:
+                    bomber_man.cur_frame = 0
+            elif self.mv_x == 4 and self.mv_y == 0:
+                frame = bomber_man.cur_frame
+                if 2 < frame < 6:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                else:
+                    bomber_man.cur_frame = 3
+            elif self.mv_x == 0 and self.mv_y == 8:
+                frame = bomber_man.cur_frame
+                if 5 < frame < 9:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 6
+                else:
+                    bomber_man.cur_frame = 6
+            elif self.mv_x == -8 and self.mv_y == 0:
+                frame = bomber_man.cur_frame
+                if 8 < frame:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                else:
+                    bomber_man.cur_frame = 9
+            elif self.mv_x > 0:
+                frame = bomber_man.cur_frame
+                if 2 < frame < 6:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                else:
+                    bomber_man.cur_frame = 3
+            elif self.mv_x < 0:
+                frame = bomber_man.cur_frame
+                if 8 < frame:
+                    bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                else:
+                    bomber_man.cur_frame = 9
+        # elif self.cur_frame > 3:
+        #     pass
+        # else:
+        #     self.cur_frame += 1
+        #     self.image = self.frames[self.cur_frame]
 
     def death(self):
 
         self.running = False
-        self.frames = []
-        self.cut_sheet(pg.image.load("bomberman_death.png"), 1, 4, )
-        self.image = self.frames[0]
+        if self.cur_frame < 12:
+            self.cur_frame = 12
+            self.image = self.frames[self.cur_frame]
+        elif self.cur_frame + 1 < 16:
+            self.cur_frame += 0.5
+            if self.cur_frame // 1 == self.cur_frame:
+                self.image = self.frames[int(self.cur_frame)]
+        else:
+            self.kill()
 
 
 class BrickBreakable(pg.sprite.Sprite):
 
     def __init__(self, x, y):
         super().__init__(all_sprites)
+
+        self.breaking = False
 
         self.frames = []
         self.cut_sheet(pg.image.load("block_sprite.png"), 8, 1)
@@ -250,6 +347,12 @@ class BrickBreakable(pg.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        if self.cur_frame > 5:
+            self.kill()
+        else:
+            self.image = self.frames[self.cur_frame]
+
+    def breaking(self):
         pass
 
 
@@ -283,93 +386,48 @@ class BrickUnbreakable(pg.sprite.Sprite):
         pass
 
 
-class Board:
-    def __init__(self, file_name):
+class CamChecer(pg.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites)
 
-        a = open(file=file_name).readlines()
-        self.lvl = [[j for j in i] for i in a]
-        # print(*self.lvl, sep='\n')
-        # print(*[''.join(i) for i in self.lvl], sep='\n')
+        self.frames = []
+        self.cut_sheet(pg.image.load("checer.png"), 1, 1)
+        self.image = self.frames[0]
 
-        self.width = len(a[0])
-        self.height = len(a)
-        self.board = [[0] * self.width for _ in range(self.height)]
-        self.left = 10
-        self.top = 10
-        self.cell_size = 30
+        self.rect = self.rect.move(0, 0)
 
-        self.cell_cfg = []
-        # self.set_view(self.left, self.top, self.cell_size)
-
-    def set_view(self, left, top, cell_size):
-        self.cell_cfg = []
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
-        for i in range(self.height):
-            for j in range(self.width):
-                if self.lvl[i][j] == '.':
-                    self.cell_cfg.append([(57, 124, 0),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-                elif self.lvl[i][j] == '*':
-                    block_breakable = BrickBreakable((j * self.cell_size) + self.left,
-                                                     (i * self.cell_size) + self.top)
-                    all_sprites.add(block_breakable)
-                elif self.lvl[i][j] == '#':
-                    block_breakable = BrickUnbreakable((j * self.cell_size) + self.left,
-                                                     (i * self.cell_size) + self.top)
-                    all_sprites.add(block_breakable)
-                else:
-                    self.cell_cfg.append([(7, 90, 0),
-                                          (((j * self.cell_size) + self.left),
-                                           ((i * self.cell_size) + self.top)),
-                                          0, -1])
-
-    def render(self, screen):
-        for i in self.cell_cfg:
-            pg.draw.rect(screen, i[0], (i[1][0], i[1][1], self.cell_size,
-                                        self.cell_size), i[2])
-
-    def get_cell(self, mouse_pos):
-        x, y = mouse_pos
-        if (self.left <= x <= self.left + self.cell_size * self.width)\
-                and (self.top <= y <= self.top + self.cell_size * self.height):
-            return (x - self.left) // self.cell_size,\
-                   (y - self.top) // self.cell_size
-
-    def on_click(self, cell_coords):
-        if self.cell_cfg[cell_coords[1] * self.width + cell_coords[0]][3] == -1:
-            pass
-
-    def get_click(self, mouse_pos):
-        mouse_cords = self.get_cell(mouse_pos)
-        if mouse_cords:
-            self.on_click(mouse_cords)
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
 
 
 if __name__ == '__main__':
     pg.init()
     running = True
-    fps = 40
+    fps = 80
     tm = 0
     clock = pg.time.Clock()
 
-    bomber_man = BomberMan(390, 270)
+    camera = Camera()
+    camchc = CamChecer()
+    all_sprites.add(camchc)
+
+    bomber_man = BomberMan(65, 275)
     all_sprites.add(bomber_man)
     new_vect = [0, 0]
 
     max_bombs = 1
     bombs = []
 
-    board_size = 21, 11
-    board = Board('levels/level_1.txt')
+    board = Board([3, 4], [2, 6])
     board_view = 320, 200, 64
-    board.set_view(board_view[0], board_view[1], board_view[2])
-    size = width, height = \
-        board_size[0] * board_view[2] + board_view[2] * 2,\
-        board_size[1] * board_view[2] + board_view[2] * 2
+    board.set_view()
 
     screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
     screen.fill((0, 0, 0))
@@ -377,7 +435,16 @@ if __name__ == '__main__':
 
     while running:
         bombs_booms = [i for i in all_sprites if type(i) == Bomb or type(i) == Boom]
-
+        if (bomber_man.rect.x > 910) and (bomber_man.mv_x >= 0):
+            camera.update(bomber_man)
+            if -1205 <= camchc.rect.x <= 31:
+                for sprite in all_sprites:
+                    camera.apply(sprite)
+        elif bomber_man.rect.x < 900:
+            if camchc.rect.x < 0:
+                camera.update(bomber_man)
+                for sprite in all_sprites:
+                    camera.apply(sprite)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -396,9 +463,11 @@ if __name__ == '__main__':
             if event.type == pg.KEYUP:
                 new_vect = BomberMan.vect_maker(bomber_man, pg.key.get_pressed())
 
-        bomber_man.movement(new_vect[0], new_vect[1])
+        if bomber_man.running:
+            bomber_man.movement(new_vect[0], new_vect[1])
         old_tm = tm
         tm += fps * clock.tick() / 2500
+
         if (tm // 1) > (old_tm // 1):
             if bombs_booms:
                 for i in bombs_booms:
@@ -406,14 +475,25 @@ if __name__ == '__main__':
                         i.cur_frame += 0.25
                     elif type(i) == Boom:
                         i.cur_frame += 1
+            for i in [i for i in all_sprites if type(i) == BrickBreakable]:
+                if i.breaking:
+                    i.cur_frame += 1
             bomber_man.tim += 0.5
-            bomber_man.FrameDirection()
+
+            if bomber_man.running:
+                bomber_man.FrameDirection()
+            else:
+                if 11 < bomber_man.cur_frame < 15:
+                    bomber_man.cur_frame += 0.25
+                    if bomber_man.cur_frame // 1 == bomber_man.cur_frame:
+                        bomber_man.image = bomber_man.frames[int(bomber_man.cur_frame)]
 
         screen.fill((0, 0, 0))
-        board.render(screen)
         pg.draw.rect(screen, (30, 30, 30), (1880, 0, 40, 40), 40)
+        pg.draw.rect(screen, (57, 124, 0), (0, 210, 1920, 832), 0)
+        pg.draw.rect(screen, (110, 110, 104), (0, 0, 1920, 252), 0)
         all_sprites.update()
         all_sprites.draw(screen)
         pg.display.flip()
-# print(*board.lvl, sep='\n')
 pg.quit()
+print(*[''.join(i) for i in board.board], sep='\n')
