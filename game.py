@@ -1,13 +1,128 @@
 import pygame as pg
 from random import shuffle, randint
+from sys import exit
+import csv
 all_sprites = pg.sprite.Group()
+
+
+def terminate():
+    pg.quit()
+    exit()
+
+
+def start_screen(score):
+
+    # pg.draw.rect(screen, (255, 0, 0), (620, 560, 210, 65), 0)
+    # pg.draw.rect(screen, (255, 0, 0), (960, 560, 310, 65), 0)
+    # BOMBER MAN
+    font = pg.font.Font(r'C:\Windows\Fonts\unispace bd.ttf', 170)
+    string_rendered = font.render('Bomber', True, pg.Color(255, 0, 0))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 100
+    intro_rect.top = text_coord
+    intro_rect.x = 650
+    screen.blit(string_rendered, intro_rect)
+
+    string_rendered = font.render('Bomber', True, pg.Color(236, 146, 24))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 90
+    intro_rect.top = text_coord
+    intro_rect.x = 640
+    screen.blit(string_rendered, intro_rect)
+
+    string_rendered = font.render('MAN', True, pg.Color(255, 0, 0))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 290
+    intro_rect.top = text_coord
+    intro_rect.x = 750
+    screen.blit(string_rendered, intro_rect)
+
+    string_rendered = font.render('MAN', True, pg.Color(236, 146, 24))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 280
+    intro_rect.top = text_coord
+    intro_rect.x = 740
+    screen.blit(string_rendered, intro_rect)
+
+
+    # LITTLE TEXT
+    # start
+    font = pg.font.Font(r'C:\Users\BOO\AppData\Local\Microsoft\Windows\Fonts\PressStart2P-vaV7.ttf', 35)
+    string_rendered = font.render('START', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 580
+    intro_rect.top = text_coord
+    intro_rect.x = 640
+    screen.blit(string_rendered, intro_rect)
+
+    # continue
+    string_rendered = font.render('CONTINUE', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 580
+    intro_rect.top = text_coord
+    intro_rect.x = 980
+    screen.blit(string_rendered, intro_rect)
+
+    # top
+    string_rendered = font.render('TOP', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 650
+    intro_rect.top = text_coord
+    intro_rect.x = 635
+    screen.blit(string_rendered, intro_rect)
+
+    # score
+    string_rendered = font.render(score, True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 650
+    intro_rect.top = text_coord
+    intro_rect.x = 950
+    screen.blit(string_rendered, intro_rect)
+
+    # TM AND Ⓒ  2022 PABLO SOFT
+    string_rendered = font.render('TM AND (c)  2022 PABLO SOFT', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 800
+    intro_rect.top = text_coord
+    intro_rect.x = 480
+    screen.blit(string_rendered, intro_rect)
+
+    # NOT LICENSED BY
+    string_rendered = font.render('NOT LICENSED BY', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 880
+    intro_rect.top = text_coord
+    intro_rect.x = 650
+    screen.blit(string_rendered, intro_rect)
+
+    # NINTENDO OF AMERICA INC.
+    string_rendered = font.render('NINTENDO OF AMERICA INC.', True, pg.Color(255, 255, 255))
+    intro_rect = string_rendered.get_rect()
+    text_coord = 960
+    intro_rect.top = text_coord
+    intro_rect.x = 540
+    screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                terminate()
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                if (620 <= pg.mouse.get_pos()[0] <= 830) and (560 <= pg.mouse.get_pos()[1] <= 615):
+                    board.lvl = 0
+                    return
+                elif (960 <= pg.mouse.get_pos()[0] <= 1270) and (560 <= pg.mouse.get_pos()[1] <= 615):
+                    return
+        pg.display.flip()
+        clock.tick(40)
 
 
 class Board:
     def __init__(self, blcs, enms):
 
-        self.width = 49
+        self.width = 30
         self.height = 13
+        self.lvl = 0
         self.board = [['()' for i in range(self.width)] for j in range(self.height)]
         self.lvl_maker(blcs, enms)
 
@@ -32,7 +147,7 @@ class Board:
                 if self.board[i][j] == '()':
                     clear_cels.append([i, j])
         for i in range(4):
-            cels = clear_cels[100 * i + 1: 100 * (i + 1) + 1]
+            cels = clear_cels[59 * i + 1: 59 * (i + 1) + 1]
             shuffle(cels)
             enemy_on_hndrdd = randint(enemy_on_hndrd[0], enemy_on_hndrd[1])
             blocks_on_hndrdd = randint(blocks_on_hndrd[0], blocks_on_hndrd[1])
@@ -48,6 +163,7 @@ class Board:
         self.board[2][2] = '[]'
 
     def set_view(self):
+        brakable = []
         for i in range(self.height):
             for j in range(self.width):
                 x, y = j * self.cell_size + self.left, i * self.cell_size + self.top
@@ -56,28 +172,14 @@ class Board:
                     all_sprites.add(block)
                 elif self.board[i][j] == '||':
                     block = BrickBreakable(x, y)
+                    brakable.append(block)
                     all_sprites.add(block)
-                # elif self.lvl[i][j] == '+-':
-
-
-class Camera:
-    def __init__(self):
-        self.dx = 0
-        self.dy = 0
-        self.mvmnt = 0
-
-    def apply(self, obj):
-        obj.rect.x += self.dx
-        obj.rect.y += self.dy
-
-    def update(self, target):
-        # print(self.dx)
-        # print(target.rect.x)
-        # print(target.rect.w)
-        self.dx = -(target.rect.x + target.rect.w // 2 - 1920 // 2)
-        # print(self.dx)
-        # print(self.dx)
-        # print('\n')
+                elif self.board[i][j] == '+-':
+                    enemy = BadGuy(i, j)
+                    all_sprites.add(enemy)
+        shuffle(brakable)
+        brakable[0].key = True
+        brakable[1].dore = True
 
 
 class Bomb(pg.sprite.Sprite):
@@ -90,9 +192,7 @@ class Bomb(pg.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
 
-        # x, y = ((x + 30) // 64) * 64 + (x - 910), ((y + 45) // 64) * 64 + 23
-        x, y = x // 64, y // 64
-        print(x, y)
+        x, y = ((x + 20) // 64) * 64 + 10, ((y + 20) // 64) * 64 + 28
         self.rect = self.rect.move(x, y)
 
         self.mask = pg.mask.from_surface(self.image)
@@ -193,6 +293,8 @@ class BomberMan(pg.sprite.Sprite):
         self.mv_y = 0
         self.rect = self.rect.move(x, y)
 
+        self.key = False
+
     def movement(self, x, y):
         if self.running:
             self.mv_x = x
@@ -208,7 +310,15 @@ class BomberMan(pg.sprite.Sprite):
                 self.rect = self.rect.move(self.mv_x, self.mv_y)
             for i in all_sprites:
                 if BomberMan is not type(i) and Bomb is not type(i):
-                    if pg.sprite.collide_mask(self, i):
+                    if type(i) == Key:
+                        if pg.sprite.collide_mask(self, i):
+                            i.rect = i.rect.move(1500 - i.rect.x, 50 - i.rect.y)
+                            self.key = True
+                    elif type(i) == Dore:
+                        if pg.sprite.collide_mask(self, i):
+                            if self.key:
+                                self.kill()
+                    elif pg.sprite.collide_mask(self, i):
                         a = False
             if a:
                 self.image = self.frames[self.cur_frame]
@@ -316,6 +426,255 @@ class BomberMan(pg.sprite.Sprite):
         else:
             self.kill()
 
+            class BomberMan(pg.sprite.Sprite):
+                def __init__(self, x, y):
+                    super().__init__(all_sprites)
+
+                    self.running = True
+
+                    self.frames = []
+                    self.cut_sheet(pg.image.load("adobe_bomberman.png"), 3, 4)
+                    self.cut_sheet(pg.image.load("bomberman_death.png"), 4, 1)
+                    self.image = self.frames[4]
+                    self.mask = pg.mask.from_surface(self.image)
+                    self.cur_frame = 6
+                    self.image = self.frames[self.cur_frame]
+
+                    self.tim = 0
+
+                    self.mv_x = 0
+                    self.mv_y = 0
+                    self.rect = self.rect.move(x, y)
+
+                    self.key = False
+
+                def movement(self, x, y):
+                    if self.running:
+                        self.mv_x = x
+                        self.mv_y = y
+
+                def update(self):
+                    if self.running:
+                        for i in [i for i in all_sprites if type(i) == Boom]:
+                            if pg.sprite.collide_mask(self, i):
+                                self.running = False
+                        a = True
+                        if self.mv_x or self.mv_y:
+                            self.rect = self.rect.move(self.mv_x, self.mv_y)
+                        for i in all_sprites:
+                            if BomberMan is not type(i) and Bomb is not type(i):
+                                if type(i) == Key:
+                                    if pg.sprite.collide_mask(self, i):
+                                        i.rect = i.rect.move(1500 - i.rect.x, 50 - i.rect.y)
+                                        self.key = True
+                                elif type(i) == Dore:
+                                    if pg.sprite.collide_mask(self, i):
+                                        if self.key:
+                                            self.kill()
+                                elif pg.sprite.collide_mask(self, i):
+                                    a = False
+                        if a:
+                            self.image = self.frames[self.cur_frame]
+                        else:
+                            if self.mv_x and self.mv_y:
+                                a = False
+                                self.rect = self.rect.move(0, -self.mv_y)
+                                for i in all_sprites:
+                                    if BomberMan is not type(i) and Bomb is not type(i):
+                                        if pg.sprite.collide_mask(self, i):
+                                            a = True
+                                if a:
+                                    a = False
+                                    self.rect = self.rect.move(-self.mv_x, self.mv_y)
+                                    for i in all_sprites:
+                                        if BomberMan is not type(i) and Bomb is not type(i):
+                                            if pg.sprite.collide_mask(self, i):
+                                                a = True
+                                    if a:
+                                        self.rect = self.rect.move(0, -self.mv_y)
+                            elif self.mv_x or self.mv_y:
+                                self.rect = self.rect.move(-self.mv_x, -self.mv_y)
+                    else:
+                        self.death()
+
+                def vect_maker(self, keys):
+
+                    new_vect = [0, 0]
+                    if keys[pg.K_w]:
+                        new_vect[1] -= 8
+                    if keys[pg.K_a]:
+                        new_vect[0] -= 8
+                    if keys[pg.K_s]:
+                        new_vect[1] += 8
+                    if keys[pg.K_d]:
+                        new_vect[0] += 8
+                    if new_vect[0] // 2 and new_vect[1] // 2:
+                        new_vect = [i / 2 for i in new_vect]
+                    return new_vect
+
+                def cut_sheet(self, sheet, columns, rows):
+                    self.rect = pg.Rect(0, 0,
+                                        sheet.get_width() // columns,
+                                        sheet.get_height() // rows)
+                    for j in range(rows):
+                        for i in range(columns):
+                            frame_location = (self.rect.w * i, self.rect.h * j)
+                            self.frames.append(sheet.subsurface(pg.Rect(
+                                frame_location, self.rect.size)))
+
+                def FrameDirection(self):
+                    if self.tim // 1 == self.tim:
+                        if self.mv_x == 0 and self.mv_y == -8:
+                            frame = bomber_man.cur_frame
+                            if 0 <= frame < 3:
+                                bomber_man.cur_frame = (frame + 1) % 3
+                            else:
+                                bomber_man.cur_frame = 0
+                        elif self.mv_x == 4 and self.mv_y == 0:
+                            frame = bomber_man.cur_frame
+                            if 2 < frame < 6:
+                                bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                            else:
+                                bomber_man.cur_frame = 3
+                        elif self.mv_x == 0 and self.mv_y == 8:
+                            frame = bomber_man.cur_frame
+                            if 5 < frame < 9:
+                                bomber_man.cur_frame = ((frame + 1) % 3) + 6
+                            else:
+                                bomber_man.cur_frame = 6
+                        elif self.mv_x == -8 and self.mv_y == 0:
+                            frame = bomber_man.cur_frame
+                            if 8 < frame:
+                                bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                            else:
+                                bomber_man.cur_frame = 9
+                        elif self.mv_x > 0:
+                            frame = bomber_man.cur_frame
+                            if 2 < frame < 6:
+                                bomber_man.cur_frame = ((frame + 1) % 3) + 3
+                            else:
+                                bomber_man.cur_frame = 3
+                        elif self.mv_x < 0:
+                            frame = bomber_man.cur_frame
+                            if 8 < frame:
+                                bomber_man.cur_frame = ((frame + 1) % 3) + 9
+                            else:
+                                bomber_man.cur_frame = 9
+                    # elif self.cur_frame > 3:
+                    #     pass
+                    # else:
+                    #     self.cur_frame += 1
+                    #     self.image = self.frames[self.cur_frame]
+
+                def death(self):
+
+                    self.running = False
+                    if self.cur_frame < 12:
+                        self.cur_frame = 12
+                        self.image = self.frames[self.cur_frame]
+                    elif self.cur_frame + 1 < 16:
+                        self.cur_frame += 0.5
+                        if self.cur_frame // 1 == self.cur_frame:
+                            self.image = self.frames[int(self.cur_frame)]
+                    else:
+                        self.kill()
+
+
+class BadGuy(pg.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.running = True
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("badguy.png"), 11, 1)
+        self.image = self.frames[3]
+        self.mask = pg.mask.from_surface(self.image)
+        self.cur_frame = 3
+        self.image = self.frames[self.cur_frame]
+
+        self.tim = 0
+
+        self.mv_x = 0
+        self.mv_y = 0
+        self.rect = self.rect.move((x + 0) * 64, (y - 0) * 64 + 210)
+
+        self.mvnt = 0
+        self.vect = [0, 0]
+
+        self.key = False
+
+    def movement(self, x, y):
+        if self.running:
+            if self.mvmt // 1 == self.mvmt:
+                self.mv_x = x
+                self.mv_y = y
+
+    def update(self):
+        if self.running:
+            for i in [i for i in all_sprites if type(i) == Boom]:
+                if pg.sprite.collide_mask(self, i):
+                    self.death()
+                    return
+            for i in [i for i in all_sprites if type(i) == BomberMan]:
+                if pg.sprite.collide_mask(self, i):
+                    BomberMan.death()
+                    return
+        else:
+            self.death()
+
+    def vect_maker(self):
+        cels = self.rect.x // 64, (self.rect.y - 210) // 64
+        if cels[0] and cels[1]:
+            clear_ways = []
+            for i in [-1, 1]:
+                if board.board[x + i][y] == '()':
+                    clear_ways.append([x + i, y])
+                if board.board[x][y + i] == '()':
+                    clear_ways.append([x + i, y])
+            a = 0
+            if clear_ways:
+                a = shuffle(clear_ways)[0]
+            if a:
+                self.vect = a
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+    def FrameDirection(self):
+        if self.running:
+            if self.tim // 1 == self.tim:
+                if self.mv_x > 0:
+                    if self.cur_frame > 1:
+                        self.cur_frame = 2
+                    else:
+                        self.cur_frame += 1
+                elif self.mv_x < 0:
+                    if 3 <= self.cur_frame <= 4:
+                        self.cur_frame += 1
+                    else:
+                        self.cur_frame = 3
+
+    def death(self):
+
+        self.running = False
+        if self.cur_frame <= 5:
+            self.cur_frame = 6
+            self.image = self.frames[self.cur_frame]
+        elif self.cur_frame + 1 < 10:
+            self.cur_frame += 0.125
+            if self.cur_frame // 1 == self.cur_frame:
+                self.image = self.frames[int(self.cur_frame)]
+        else:
+            self.kill()
+
 
 class BrickBreakable(pg.sprite.Sprite):
 
@@ -336,6 +695,9 @@ class BrickBreakable(pg.sprite.Sprite):
 
         self.mask = pg.mask.from_surface(self.image)
 
+        self.key = False
+        self.dore = False
+
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0,
                             sheet.get_width() // columns,
@@ -348,6 +710,12 @@ class BrickBreakable(pg.sprite.Sprite):
 
     def update(self):
         if self.cur_frame > 5:
+            if self.dore:
+                dore = Dore(self.rect.x, self.rect.y)
+                all_sprites.add(dore)
+            elif self.key:
+                key = Key(self.rect.x, self.rect.y)
+                all_sprites.add(key)
             self.kill()
         else:
             self.image = self.frames[self.cur_frame]
@@ -386,15 +754,42 @@ class BrickUnbreakable(pg.sprite.Sprite):
         pass
 
 
-class CamChecer(pg.sprite.Sprite):
-    def __init__(self):
+class Dore(pg.sprite.Sprite):
+
+    def __init__(self, x, y):
         super().__init__(all_sprites)
 
         self.frames = []
-        self.cut_sheet(pg.image.load("checer.png"), 1, 1)
+        self.cut_sheet(pg.image.load("dore.png"), 1, 1)
         self.image = self.frames[0]
 
-        self.rect = self.rect.move(0, 0)
+        self.rect = self.rect.move(x, y)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0,
+                            sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pg.Rect(
+                    frame_location, self.rect.size)))
+
+
+class Key(pg.sprite.Sprite):
+
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+
+        self.frames = []
+        self.cut_sheet(pg.image.load("key.png"), 1, 1)
+        self.image = self.frames[0]
+
+        self.rect = self.rect.move(x + 13, y + 13)
+
+        self.mask = pg.mask.from_surface(self.image)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0,
@@ -409,14 +804,16 @@ class CamChecer(pg.sprite.Sprite):
 
 if __name__ == '__main__':
     pg.init()
+
+    with open('scores.csv', encoding="utf8") as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        expensive = sorted(reader)
+    top = sorted(expensive, key=lambda x: x[1], reverse=True)
+
     running = True
-    fps = 80
+    fps = 40
     tm = 0
     clock = pg.time.Clock()
-
-    camera = Camera()
-    camchc = CamChecer()
-    all_sprites.add(camchc)
 
     bomber_man = BomberMan(65, 275)
     all_sprites.add(bomber_man)
@@ -425,26 +822,18 @@ if __name__ == '__main__':
     max_bombs = 1
     bombs = []
 
-    board = Board([3, 4], [2, 6])
+    lvl = 0
+    board = Board([10, 15], [1, 3])
     board_view = 320, 200, 64
     board.set_view()
 
     screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
     screen.fill((0, 0, 0))
+    start_screen(top[0][1])
     pg.display.flip()
 
     while running:
         bombs_booms = [i for i in all_sprites if type(i) == Bomb or type(i) == Boom]
-        if (bomber_man.rect.x > 910) and (bomber_man.mv_x >= 0):
-            camera.update(bomber_man)
-            if -1205 <= camchc.rect.x <= 31:
-                for sprite in all_sprites:
-                    camera.apply(sprite)
-        elif bomber_man.rect.x < 900:
-            if camchc.rect.x < 0:
-                camera.update(bomber_man)
-                for sprite in all_sprites:
-                    camera.apply(sprite)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -467,8 +856,12 @@ if __name__ == '__main__':
             bomber_man.movement(new_vect[0], new_vect[1])
         old_tm = tm
         tm += fps * clock.tick() / 2500
+        enemys = [i for i in all_sprites if type(i) == BadGuy]
 
         if (tm // 1) > (old_tm // 1):
+            if enemys:
+                for i in enemys:
+                    i.FrameDirection()
             if bombs_booms:
                 for i in bombs_booms:
                     if type(i) == Bomb:
@@ -487,11 +880,15 @@ if __name__ == '__main__':
                     bomber_man.cur_frame += 0.25
                     if bomber_man.cur_frame // 1 == bomber_man.cur_frame:
                         bomber_man.image = bomber_man.frames[int(bomber_man.cur_frame)]
+            enemys = [i for i in all_sprites if type(i) == BadGuy]
+            if enemys:
+                for i in enemys:
+                    i.mvnt += 0.25
 
         screen.fill((0, 0, 0))
         pg.draw.rect(screen, (30, 30, 30), (1880, 0, 40, 40), 40)
         pg.draw.rect(screen, (57, 124, 0), (0, 210, 1920, 832), 0)
-        pg.draw.rect(screen, (110, 110, 104), (0, 0, 1920, 252), 0)
+        pg.draw.rect(screen, (110, 110, 104), (0, 0, 1920, 210), 0)
         all_sprites.update()
         all_sprites.draw(screen)
         pg.display.flip()
