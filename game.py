@@ -391,7 +391,8 @@ def start_game(num, screen):
                 if self.mv_x or self.mv_y:
                     self.rect = self.rect.move(self.mv_x, self.mv_y)
                 for i in all_sprites:
-                    if BomberMan is not type(i) and Bomb is not type(i):
+                    if BomberMan is not type(i) and Bomb is not type(i)\
+                            and BadGuy is not type(i) and Boom is not type(i):
                         if type(i) == Key:
                             if pg.sprite.collide_mask(self, i):
                                 i.kill()
@@ -542,10 +543,10 @@ def start_game(num, screen):
         def update(self):
 
             pos = [self.rect.x // 64, (self.rect.y - 210) // 64]
+            self.cels = ((self.rect.y - 210) // 64), (self.rect.x // 64)
             if pos[0] == self.rect.x / 64 and pos[1] == (self.rect.y - 210) / 64:
                 self.vect_maker()
 
-            self.cels = (self.rect.y - 210) // 64, self.rect.x // 64
             if self.running:
                 for i in [i for i in all_sprites if type(i) == Boom]:
                     if pg.sprite.collide_mask(self, i):
@@ -553,7 +554,7 @@ def start_game(num, screen):
                         return
                 for i in [i for i in all_sprites if type(i) == BomberMan]:
                     if pg.sprite.collide_mask(self, i):
-                        BomberMan.death()
+                        bomber_man.death()
                         return
                 if self.mvnt // 1 == self.mvnt:
                     self.movement(self.vect)
@@ -565,16 +566,9 @@ def start_game(num, screen):
             if cels[0] and cels[1]:
                 clear_ways = []
                 for i in [-1, 1]:
-                    y, x = cels[0], cels[1] - 1
-                    # print(x, y)
-                    # print(*[''.join(i) for i in board.board], sep='\n')
-                    # print(2 * '\n')
-                    # print(f'77{board.board[y - 1][x]}77')
-                    # print(f'{board.board[y][x - 1]}{board.board[y][x]}{board.board[y][x + 1]}')
-                    # print(f'77{board.board[y + 1][x]}77')
+                    y, x = cels[0], cels[1]
                     if 0 <= x + i < len(board.board[1]) - 1:
                         if board.board[y][x + i] == '()':
-                            print(board.board[y][x])
                             clear_ways.append([0, i])
                     if 0 <= y + 1 < len(board.board[0]) - 1:
                         if board.board[y + i][x] == '()':
@@ -584,7 +578,6 @@ def start_game(num, screen):
                     n = randint(0, len(clear_ways) - 1)
                     a = clear_ways[n]
                 if a:
-                    # a = cels[0] - a[0], cels[1] - a[1]
                     self.vect = a
                 else:
                     self.vect = [0, 0]
@@ -807,9 +800,9 @@ def start_game(num, screen):
     max_bombs = 1
 
     lvl = num
-    lvls = [[[8, 15], [1, 3]], [[15, 20], [2, 5]], [[15, 25], [3, 6]]]
+    lvls = [[[4, 10], [0, 2]], [[6, 10], [1, 2]], [[7, 12], [1, 3]]]
     # for test
-    lvls = [[[3, 4], [0, 1]], [[3, 4], [0, 1]], [[2, 4], [0, 1]]]
+    # lvls = [[[3, 4], [0, 1]], [[3, 4], [0, 1]], [[2, 4], [0, 1]]]
     board = Board(lvls[lvl][0], lvls[lvl][1])
     board_view = 320, 200, 64
     board.set_view()
